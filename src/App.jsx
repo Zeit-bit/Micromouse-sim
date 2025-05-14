@@ -2,17 +2,15 @@ import { useState } from 'react'
 
 const App = () => {
   const [cellCount, setCellCount] = useState(4)
-  // 0 = Empty cell
-  // 1 = Wall
-  // 2 = Wall-Joints
+
   const mazeDictionary = {
-    0: 'bg-gray-800',
-    1: 'bg-black',
-    2: 'bg-red-400',
+    0: 'bg-gray-800', // Empty cell
+    1: 'bg-black', // Wall
+    2: 'bg-red-400', // Wall-Joints
   }
 
   const CreateGrid = (size) => {
-    // The lenght of the matriz = cell count + the wall in betweens
+    // The lenght of the matrix = cell count + the wall in betweens
     const length = size * 2 - 1
     const grid = []
 
@@ -21,7 +19,7 @@ const App = () => {
       grid.push(new Array())
     }
 
-    // for each row (array) in the grid
+    // For each row (array) in the grid
     // we push the corresponding values for empty cells or walls
     grid.forEach((row, index) => {
       for (let i = 0; i < length; i++) {
@@ -39,11 +37,12 @@ const App = () => {
       style += i % 2 === 0 ? '2fr' : '0.3fr'
       style += i !== matrixLength - 1 ? ' ' : ''
     }
-    console.log(style)
     return style
   }
 
-  const mapColumn = (row, rowIndex) => {
+  const mapRow = (row, rowIndex) => {
+    // Returns a div that contains all elements of each column
+    // inside of the current row, and assigns styles accordingly
     return (
       <div
         key={`row-${rowIndex}`}
@@ -61,19 +60,71 @@ const App = () => {
   }
 
   const MapMaze = (maze) => {
+    // Returns a div that wraps another div containing all rows
+    // of the maze matrix (each row, already mapped and styled)
     return (
       <div className={`size-11/12 border-8 border-red-400`}>
         <div
           className="grid size-full"
           style={{ gridTemplateRows: StyleGridFractions(maze.length) }}
         >
-          {maze.map((row, rowIndex) => mapColumn(row, rowIndex))}
+          {maze.map((row, rowIndex) => mapRow(row, rowIndex))}
         </div>
       </div>
     )
   }
 
-  let maze = CreateGrid(cellCount)
+  const GenMaze = () => {
+    // Get random pos for first unvisited cell
+    const [x, y] = [
+      Math.floor(Math.random() * (cellCount - 1)),
+      Math.floor(Math.random() * (cellCount - 1)),
+    ]
+
+    // Log initial coordinates
+    console.log('Initial-Coords', [x, y])
+
+    // Create matrix of cellCount length for marking visited cells
+    const visited = []
+    for (let i = 0; i < cellCount; i++) {
+      visited.push(new Array())
+      while (visited[i].length < cellCount) visited[i].push(false)
+    }
+
+    // Function to validate that neighbors' coordinates are inside the bounds of the matrix
+    const InsideBounds = (coord, maxLength) =>
+      !(coord[0] > maxLength) &&
+      !(coord[1] > maxLength) &&
+      !(coord[0] < 0) &&
+      !(coord[1] < 0)
+
+    /*
+    GenMazeDFS-PseudoCode
+
+    GenMazeDFS = (x,y,visited,grid) => {
+      visited[x][y] === true
+      if (all visited) return true
+
+      neighbors = GetNeighborsAndFilter(x,y,visited)
+
+      let backtrack = false
+      let [newX, newY] = [-1, -1]
+
+      do {
+        if (backtrack) neighbors = removeNeighbor(newX, newY)
+        if (cellNeighbors === 0) return false
+        [newX, newY] = rndNeighborCell(neighbors)
+        [wallX, wallY] = GetWallPos(x,y,newX,newY)
+        grid[wallX][wallY] === 0
+
+      } while !GenMazeDFS(mewX, newY, visited, grid) {
+
+      return true
+    }
+    */
+  }
+
+  const grid = CreateGrid(cellCount)
 
   return (
     <>
@@ -93,7 +144,7 @@ const App = () => {
         ></input>
         <div className="m-auto mt-10 size-150 border-8">
           <div className="flex size-full items-center justify-center border-8 border-blue-300">
-            {MapMaze(maze)}
+            {MapMaze(grid)}
           </div>
         </div>
       </div>
