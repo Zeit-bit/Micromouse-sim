@@ -9,3 +9,11 @@ Generation of 3x3 grid
 
 Generation of 5x5 grid
 ![grid-gen 5-cells](images/GridGen5Cells.png)
+
+# Maze-Generator
+
+Before generation
+![before-gen 6-cells](images/MazeGenBefore.png)
+
+After generation
+![before-gen 6-cells](images/MazeGenAfter.png)
