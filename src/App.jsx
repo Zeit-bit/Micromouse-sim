@@ -4,9 +4,12 @@ const App = () => {
   const [cellCount, setCellCount] = useState(4)
   const [maze, setMaze] = useState(null)
   const mazeDictionary = {
-    0: 'bg-gray-800', // Empty cell
-    1: 'bg-black', // Wall
-    2: 'bg-red-400', // Wall-Joints
+    0: 'bg-gray-900', // Empty cell
+    1: 'bg-white', // Wall
+    2: 'bg-white', // Wall-Joints
+    3: 'bg-gray-900', // Removed wall
+    4: 'bg-gray-700', // Visited Cell
+    5: 'bg-gray-800', // Visited Deadend
   }
 
   const CreateGrid = (size) => {
@@ -59,7 +62,7 @@ const App = () => {
     )
   }
 
-  const MapMaze = (maze) => {
+  const MapMatrix = (maze) => {
     // Returns a div that wraps another div containing all rows
     // of the maze matrix (each row, already mapped and styled)
     return (
@@ -79,14 +82,16 @@ const App = () => {
     if (maze) setMaze(null)
   }
 
+  const Sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
   const GenMaze = (grid) => {
     // Creating a copy of the grid to mutate over it
     const mutableGrid = grid.map((row) => [...row])
 
     // Get random pos for first unvisited cell
     const [x, y] = [
-      Math.floor(Math.random() * (cellCount - 1)),
-      Math.floor(Math.random() * (cellCount - 1)),
+      Math.floor(Math.random() * cellCount),
+      Math.floor(Math.random() * cellCount),
     ]
 
     // Create matrix of cellCount length for marking visited cells
@@ -97,7 +102,7 @@ const App = () => {
     }
 
     // Function that generates a maze using backtracking (DFS)
-    const GenMazeDFS = (x, y, visited, mutableGrid) => {
+    const GenMazeDFS = async (x, y, visited, mutableGrid) => {
       // We always get an unvisited position here
       visited[x][y] = true
 
@@ -106,7 +111,7 @@ const App = () => {
         return true
 
       // Creation of a list of coordinates that correspond to neighboring cells of the current cell
-      let neighbors = GetNeighborsAndFilter(x, y, visited)
+      let neighbors = ValidateNeighbors(GetNeighbors(x, y), visited)
 
       // Flag to indicate if the current call has been backtracked
       let backtrack = false
@@ -116,7 +121,7 @@ const App = () => {
 
       do {
         // If we have backtracked, we remove the coordinates of the neighbor from which we backtracked
-        if (backtrack) neighbors = RemoveNeighbor(neighbors, newX, newY)
+        if (backtrack) neighbors = ValidateNeighbors(neighbors, visited)
 
         // If there are no more neighbors we return false to backtrack
         if (neighbors.length === 0)
@@ -124,19 +129,19 @@ const App = () => {
 
           // Assign random positions to the new cell (based on the current neighbors)
         ;[newX, newY] = RndNeighbor(neighbors)
-
         // Get the correponding position of the wall to remove
         let [wallX, wallY] = GetWallPos(x, y, newX, newY)
 
-        // Removing the wall
-        mutableGrid[wallX][wallY] = 0
+        // Updating state
+        mutableGrid[wallX][wallY] = 3 // Removing Wall
+        mutableGrid[x * 2][y * 2] = 4 // Updating currentCell
+        mutableGrid[newX * 2][newY * 2] = 5 // Updating newCell
+        setMaze([...mutableGrid])
+        await Sleep(20)
 
         // We flag backtrack to true, so that if it backtracks, we can update variables accordingly
         backtrack = true
-      } while (!GenMazeDFS(newX, newY, visited, mutableGrid)) // Runs until all cells are visited
-
-      // Setting the maze so that react can render it
-      setMaze(mutableGrid)
+      } while (!(await GenMazeDFS(newX, newY, visited, mutableGrid))) // Runs until all cells are visited
       return true
     }
 
@@ -147,30 +152,25 @@ const App = () => {
       !(coord[0] < 0) &&
       !(coord[1] < 0)
 
-    const GetNeighborsAndFilter = (x, y, visited) => {
+    const GetNeighbors = (x, y) => {
       let neighbors = [
         [x - 1, y],
         [x, y + 1],
         [x + 1, y],
         [x, y - 1],
       ]
-      neighbors = neighbors.filter((coord) =>
+
+      return neighbors.filter((coord) =>
         IsInsideBounds(coord, visited.length - 1),
       )
-      neighbors = neighbors.filter(
-        (coord) => visited[coord[0]][coord[1]] === false,
-      )
-      return neighbors
     }
 
-    const RemoveNeighbor = (neighbors, newX, newY) => {
-      return neighbors.filter(
-        (coord) => JSON.stringify(coord) !== JSON.stringify([newX, newY]),
-      )
+    const ValidateNeighbors = (neighbors, visited) => {
+      return neighbors.filter((coord) => visited[coord[0]][coord[1]] === false)
     }
 
     const RndNeighbor = (neighbors) => {
-      const rndIndex = Math.floor(Math.random() * (neighbors.length - 1))
+      const rndIndex = Math.floor(Math.random() * neighbors.length)
       return neighbors[rndIndex]
     }
 
@@ -205,14 +205,14 @@ const App = () => {
           ></input>
           <button
             className="mt-10 flex border-4 border-blue-300 bg-gray-800 p-3 text-center text-2xl font-bold text-white outline-4 outline-black"
-            onClick={() => (!maze ? GenMaze(grid) : setMaze(null))}
+            onClick={() => (maze ? setMaze(null) : GenMaze(grid))}
           >
-            {!maze ? 'Create Maze' : 'Reset'}
+            {maze ? 'Reset' : 'Create Maze'}
           </button>
         </div>
         <div className="m-auto mt-10 size-150 border-8">
           <div className="flex size-full items-center justify-center border-8 border-blue-300">
-            {!maze ? MapMaze(grid) : MapMaze(maze)}
+            {MapMatrix(maze ? maze : grid)}
           </div>
         </div>
       </div>
