@@ -89,7 +89,7 @@ const App = () => {
     const mutableGrid = grid.map((row) => [...row])
 
     // Get random pos for first unvisited cell
-    const [x, y] = [
+    const [row, col] = [
       Math.floor(Math.random() * cellCount),
       Math.floor(Math.random() * cellCount),
     ]
@@ -102,22 +102,21 @@ const App = () => {
     }
 
     // Function that generates a maze using backtracking (DFS)
-    const GenMazeDFS = async (x, y, visited, mutableGrid) => {
+    const GenMazeDFS = async (row, col, visited, mutableGrid) => {
       // We always get an unvisited position here
-      visited[x][y] = true
+      visited[row][col] = true
 
       // Return true when all cells are visited (to stop new function calls and end the recursive function)
-      if (visited.every((row) => row.every((column) => column === true)))
-        return true
+      if (visited.every((row) => row.every((col) => col === true))) return true
 
       // Creation of a list of coordinates that correspond to neighboring cells of the current cell
-      let neighbors = ValidateNeighbors(GetNeighbors(x, y), visited)
+      let neighbors = ValidateNeighbors(GetNeighbors(row, col), visited)
 
       // Flag to indicate if the current call has been backtracked
       let backtrack = false
 
       // Declartion of the positions of the new Cell (to update them later when backtracking)
-      let [newX, newY] = [-1, -1]
+      let [newRow, newCol] = [-1, -1]
 
       do {
         // If we have backtracked, we remove the coordinates of the neighbor from which we backtracked
@@ -128,20 +127,20 @@ const App = () => {
           return false
 
           // Assign random positions to the new cell (based on the current neighbors)
-        ;[newX, newY] = RndNeighbor(neighbors)
+        ;[newRow, newCol] = RndNeighbor(neighbors)
         // Get the correponding position of the wall to remove
-        let [wallX, wallY] = GetWallPos(x, y, newX, newY)
+        let [wallX, wallY] = GetWallPos(row, col, newRow, newCol)
 
         // Updating state
         mutableGrid[wallX][wallY] = 3 // Removing Wall
-        mutableGrid[x * 2][y * 2] = 4 // Updating currentCell
-        mutableGrid[newX * 2][newY * 2] = 5 // Updating newCell
+        mutableGrid[row * 2][col * 2] = 4 // Updating currentCell
+        mutableGrid[newRow * 2][newCol * 2] = 5 // Updating newCell
         setMaze([...mutableGrid])
         await Sleep(20)
 
         // We flag backtrack to true, so that if it backtracks, we can update variables accordingly
         backtrack = true
-      } while (!(await GenMazeDFS(newX, newY, visited, mutableGrid))) // Runs until all cells are visited
+      } while (!(await GenMazeDFS(newRow, newCol, visited, mutableGrid))) // Runs until all cells are visited
       return true
     }
 
@@ -152,12 +151,12 @@ const App = () => {
       !(coord[0] < 0) &&
       !(coord[1] < 0)
 
-    const GetNeighbors = (x, y) => {
+    const GetNeighbors = (row, col) => {
       let neighbors = [
-        [x - 1, y],
-        [x, y + 1],
-        [x + 1, y],
-        [x, y - 1],
+        [row - 1, col],
+        [row, col + 1],
+        [row + 1, col],
+        [row, col - 1],
       ]
 
       return neighbors.filter((coord) =>
@@ -174,14 +173,16 @@ const App = () => {
       return neighbors[rndIndex]
     }
 
-    const GetWallPos = (x, y, newX, newY) => {
-      let wallX = x * 2 + (newX - x)
-      let wallY = y * 2 + (newY - y)
+    const GetWallPos = (row, col, newRow, newCol) => {
+      let wallX = row * 2 + (newRow - row)
+      let wallY = col * 2 + (newCol - col)
       return [wallX, wallY]
     }
 
     // Calling the DFS maze generation function
-    GenMazeDFS(x, y, visited, mutableGrid)
+    GenMazeDFS(row, col, visited, mutableGrid).then(() =>
+      console.log('MazeGEn Finished'),
+    )
   }
 
   const grid = CreateGrid(cellCount)
