@@ -181,7 +181,7 @@ const App = () => {
 
     // Calling the DFS maze generation function
     GenMazeDFS(row, col, visited, mutableGrid).then(() =>
-      console.log('MazeGEn Finished'),
+      console.log('MazeGen Finished'),
     )
   }
 
